@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log('🌱 Seeding Neon database...');
+
   const adminPassword = await bcrypt.hash('admin123', 10);
   const userPassword = await bcrypt.hash('user123', 10);
 
@@ -31,14 +33,14 @@ async function main() {
     },
   });
 
-  console.log('Seed data created:');
+  console.log('✅ Seed data successfully created:');
   console.log('Admin: admin@infralense.com / admin123');
   console.log('Citizen: citizen@infralense.com / user123');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Error seeding database:', e);
     process.exit(1);
   })
   .finally(async () => {
