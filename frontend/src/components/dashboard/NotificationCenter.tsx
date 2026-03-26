@@ -5,7 +5,7 @@ import axios from 'axios';
 import GlassCard from '../ui/GlassCard';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5000');
+const socket = io(import.meta.env.VITE_API_URL);
 
 const NotificationCenter: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -20,7 +20,7 @@ const NotificationCenter: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setAnnouncements(res.data);
-      } catch {}
+      } catch { }
     };
     fetchAnnouncements();
 
@@ -42,7 +42,7 @@ const NotificationCenter: React.FC = () => {
             time: p.updatedAt
           }));
         setNotifications(statusNotifs);
-      } catch {}
+      } catch { }
     };
     fetchPetitions();
 
@@ -68,14 +68,14 @@ const NotificationCenter: React.FC = () => {
 
   const getIcon = (item: any) => {
     if (item.type === 'announcement') {
-      switch(item.priority) {
+      switch (item.priority) {
         case 'CRITICAL': return <AlertTriangle size={16} className="text-red-400" />;
         case 'WARNING': return <Zap size={16} className="text-amber-400" />;
         default: return <Megaphone size={16} className="text-[var(--accent)]" />;
       }
     }
-    return item.status === 'APPROVED' 
-      ? <CheckCircle size={16} className="text-emerald-400" /> 
+    return item.status === 'APPROVED'
+      ? <CheckCircle size={16} className="text-emerald-400" />
       : <XCircle size={16} className="text-red-400" />;
   };
 
@@ -96,9 +96,8 @@ const NotificationCenter: React.FC = () => {
           </div>
         ) : allItems.map((item, i) => (
           <motion.div key={`${item.type}-${item.id}-${i}`} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
-            <GlassCard className={`!p-5 border-white/5 hover:border-white/10 transition-all ${
-              item.type === 'announcement' && item.priority === 'CRITICAL' ? '!border-red-500/20' : ''
-            }`}>
+            <GlassCard className={`!p-5 border-white/5 hover:border-white/10 transition-all ${item.type === 'announcement' && item.priority === 'CRITICAL' ? '!border-red-500/20' : ''
+              }`}>
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0">
                   {getIcon(item)}

@@ -25,7 +25,7 @@ import { io } from 'socket.io-client';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const socket = io('http://localhost:5000');
+const socket = io(import.meta.env.VITE_API_URL);
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();

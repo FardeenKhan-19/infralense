@@ -6,7 +6,7 @@ import GlassCard from '../ui/GlassCard';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
-const socket = io('http://localhost:5000');
+const socket = io(import.meta.env.VITE_API_URL);
 
 const MyPetitions: React.FC = () => {
   const [petitions, setPetitions] = useState<any[]>([]);
@@ -82,7 +82,7 @@ const MyPetitions: React.FC = () => {
   const handleExport = (petition: any) => {
     const isApproved = petition.status === 'APPROVED';
     const isRejected = petition.status === 'REJECTED';
-    
+
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -200,7 +200,7 @@ const MyPetitions: React.FC = () => {
               transition={{ delay: i * 0.1 }}
             >
               <GlassCard className="p-6 hover:border-[var(--accent)]/30 transition-all group relative overflow-hidden">
-                
+
                 {/* ═══ NOTARY SEAL OVERLAY ═══ */}
                 {(petition.status === 'APPROVED' || petition.status === 'RESOLVED') && (
                   <div className="absolute top-6 right-6 z-10 pointer-events-none select-none" style={{ transform: 'rotate(-18deg)' }}>
@@ -240,7 +240,7 @@ const MyPetitions: React.FC = () => {
                 </div>
 
                 <h3 className="text-lg font-bold mb-2 group-hover:text-[var(--accent)] transition-colors">{petition.title}</h3>
-                
+
                 <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm mb-4">
                   <MapPin size={14} />
                   <span>{petition.locationName}</span>
@@ -262,14 +262,14 @@ const MyPetitions: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <button 
+                    <button
                       onClick={() => handleExport(petition)}
                       className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5 hover:bg-[var(--accent)] hover:text-black transition-all text-[9px] font-black uppercase tracking-widest"
                     >
                       <Download size={12} /> Download Case
                     </button>
                     <button className="text-[var(--accent)] text-[9px] font-black uppercase tracking-widest hover:underline decoration-2 underline-offset-4 flex items-center gap-2">
-                       <FileCheck size={12} /> View Details
+                      <FileCheck size={12} /> View Details
                     </button>
                   </div>
                 </div>
