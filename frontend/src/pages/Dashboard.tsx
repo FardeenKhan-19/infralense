@@ -88,7 +88,7 @@ const Dashboard: React.FC = () => {
 
   const secondaryNavItems: { icon: React.ReactNode, label: string, view?: string, onClick?: () => void }[] = [
     { icon: <Settings size={20} />, label: 'Settings', view: 'Settings' },
-    { icon: <LogOut size={20} />, label: 'Sign Out', onClick: () => window.location.href = '/login' },
+    { icon: <LogOut size={20} />, label: 'Sign Out', onClick: () => window.location.href = '/landing' },
   ];
 
   return (
