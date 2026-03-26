@@ -18,7 +18,7 @@ const Login: React.FC = () => {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
     try {
-      const res = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/login', { email, password });
+      const res = await axios.post('https://infralense.onrender.com/api/auth/login', { email, password });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       toast.success('Neural Link Established');
