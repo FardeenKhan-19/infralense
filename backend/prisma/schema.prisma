@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  password      String
+  name          String
+  role          String     @default("CITIZEN") // CITIZEN or ADMIN
+  petitions     Petition[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Petition {
+  id              String   @id @default(cuid())
+  title           String
+  content         String
+  locationName    String
+  latitude        Float
+  longitude       Float
+  severityScore   Float
+  population      Int
+  status          String   @default("PENDING") // PENDING, REVIEWING, SUBMITTED, RESOLVED
+  creator         User     @relation(fields: [creatorId], references: [id])
+  creatorId       String
+  targetAuthority String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AnalyticsLog {
+  id           String   @id @default(cuid())
+  locationName String
+  lat          Float
+  lng          Float
+  data         String   // JSON stringified
+  createdAt    DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  priority  String   @default("INFO") // INFO, WARNING, CRITICAL
+  createdAt DateTime @default(now())
+}

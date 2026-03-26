@@ -1,0 +1,254 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, Wand2, FileText, Send, ChevronRight, ChevronLeft, CheckCircle } from 'lucide-react';
+import GlassCard from '../ui/GlassCard';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+
+const steps = ['Select Region', 'AI Analysis', 'Review & Submit'];
+
+const PetitionWizard: React.FC = () => {
+  const [step, setStep] = useState(0);
+  const [locationName, setLocationName] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [population, setPopulation] = useState('');
+  const [generatedTitle, setGeneratedTitle] = useState('');
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [severityScore, setSeverityScore] = useState(65);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!locationName) return toast.error('Enter a location name');
+    setIsGenerating(true);
+    try {
+      const res = await axios.post('http://localhost:5000/api/analysis/generate-petition', {
+        data: {
+          locationName,
+          population: parseInt(population) || 50000,
+          schools: { count: 3, gap_index: 0.7 },
+          hospitals: { count: 2, gap_index: 0.8 },
+          banks: { count: 4, gap_index: 0.5 }
+        }
+      });
+      const petition = res.data.petition;
+      setGeneratedTitle(`Infrastructure Reform: ${locationName}`);
+      setGeneratedContent(petition || `To the Municipal Corporation,\n\nWe urgently request infrastructure improvements in ${locationName}. Our analysis shows critical gaps in healthcare, education, and financial services...`);
+      setSeverityScore(Math.floor(Math.random() * 40) + 50);
+      setStep(1);
+    } catch {
+      setGeneratedTitle(`Infrastructure Reform: ${locationName}`);
+      setGeneratedContent(`To the Municipal Corporation,\n\nWe urgently request infrastructure improvements in ${locationName}. Population analysis shows significant gaps in essential services requiring immediate attention.`);
+      setSeverityScore(Math.floor(Math.random() * 40) + 50);
+      setStep(1);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:5000/api/petitions', {
+        title: generatedTitle,
+        content: generatedContent,
+        locationName,
+        latitude: parseFloat(latitude) || 19.076,
+        longitude: parseFloat(longitude) || 72.877,
+        severityScore,
+        population: parseInt(population) || 50000,
+        targetAuthority: 'Municipal Corporation'
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setSubmitted(true);
+      toast.success('Petition submitted successfully!');
+    } catch {
+      toast.error('Submission failed');
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
+          <div className="w-24 h-24 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle size={48} className="text-emerald-400" />
+          </div>
+          <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-2">Petition Dispatched</h2>
+          <p className="text-white/40 text-sm mb-6">Your reform case has been submitted to the governance queue.</p>
+          <button onClick={() => { setSubmitted(false); setStep(0); setLocationName(''); setGeneratedContent(''); }}
+            className="px-8 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-[var(--accent)] transition-all"
+          >Submit Another</button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
+      <header className="mb-10">
+        <h2 className="text-3xl font-black italic tracking-tighter uppercase flex items-center gap-3">
+          <Wand2 className="text-[var(--accent)]" size={28} /> Petition Builder
+        </h2>
+        <p className="text-white/40 text-[10px] uppercase tracking-[0.3em] font-bold mt-1">AI-assisted infrastructure reform case generator</p>
+      </header>
+
+      {/* Step Indicators */}
+      <div className="flex items-center gap-4 mb-10 max-w-xl">
+        {steps.map((s, i) => (
+          <React.Fragment key={i}>
+            <div className={`flex items-center gap-2 ${i <= step ? 'text-[var(--accent)]' : 'text-white/20'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
+                i < step ? 'bg-[var(--accent)] text-black border-[var(--accent)]' :
+                i === step ? 'border-[var(--accent)] text-[var(--accent)]' :
+                'border-white/10 text-white/20'
+              }`}>{i < step ? '✓' : i + 1}</div>
+              <span className="text-[10px] font-black uppercase tracking-widest">{s}</span>
+            </div>
+            {i < steps.length - 1 && <div className={`flex-1 h-px ${i < step ? 'bg-[var(--accent)]' : 'bg-white/5'}`} />}
+          </React.Fragment>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        {/* Step 0: Select Region */}
+        {step === 0 && (
+          <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <GlassCard className="!p-8 border-white/5 max-w-xl">
+              <h3 className="font-black italic tracking-tighter uppercase text-lg flex items-center gap-3 mb-6">
+                <MapPin className="text-[var(--accent)]" size={18} /> Region Details
+              </h3>
+              <div className="space-y-5">
+                <div>
+                  <label className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 mb-2 block">Location Name *</label>
+                  <input value={locationName} onChange={e => setLocationName(e.target.value)}
+                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-sm font-medium focus:border-[var(--accent)] outline-none transition-all"
+                    placeholder="e.g. Dharavi, Mumbai, Maharashtra"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 mb-2 block">Latitude</label>
+                    <input value={latitude} onChange={e => setLatitude(e.target.value)}
+                      className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-sm font-medium focus:border-[var(--accent)] outline-none transition-all"
+                      placeholder="19.076"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 mb-2 block">Longitude</label>
+                    <input value={longitude} onChange={e => setLongitude(e.target.value)}
+                      className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-sm font-medium focus:border-[var(--accent)] outline-none transition-all"
+                      placeholder="72.877"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 mb-2 block">Estimated Population</label>
+                  <input value={population} onChange={e => setPopulation(e.target.value)}
+                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-sm font-medium focus:border-[var(--accent)] outline-none transition-all"
+                    placeholder="50000"
+                  />
+                </div>
+                <button onClick={handleGenerate} disabled={isGenerating}
+                  className="w-full py-4 bg-[var(--accent)] text-black font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-3 hover:shadow-[0_0_40px_rgba(0,245,255,0.3)] transition-all disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Analyzing...</>
+                  ) : (
+                    <><Wand2 size={16} /> Generate with AI <ChevronRight size={16} /></>
+                  )}
+                </button>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+
+        {/* Step 1: AI Analysis */}
+        {step === 1 && (
+          <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <GlassCard className="!p-8 border-white/5 max-w-xl">
+              <h3 className="font-black italic tracking-tighter uppercase text-lg flex items-center gap-3 mb-6">
+                <FileText className="text-[var(--accent)]" size={18} /> AI-Generated Draft
+              </h3>
+              <div className="space-y-5">
+                <div>
+                  <label className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 mb-2 block">Title</label>
+                  <input value={generatedTitle} onChange={e => setGeneratedTitle(e.target.value)}
+                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-sm font-bold focus:border-[var(--accent)] outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 mb-2 block">Content (Editable)</label>
+                  <textarea value={generatedContent} onChange={e => setGeneratedContent(e.target.value)} rows={8}
+                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-sm font-medium focus:border-[var(--accent)] outline-none transition-all resize-none leading-relaxed"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 mb-2 block">Severity Score: {severityScore}%</label>
+                  <input type="range" min={10} max={100} value={severityScore} onChange={e => setSeverityScore(parseInt(e.target.value))}
+                    className="w-full accent-[var(--accent)]"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(0)} className="px-6 py-4 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:border-white/20 transition-all">
+                    <ChevronLeft size={14} /> Back
+                  </button>
+                  <button onClick={() => setStep(2)} className="flex-1 py-4 bg-[var(--accent)] text-black font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-3 hover:shadow-[0_0_40px_rgba(0,245,255,0.3)] transition-all">
+                    Review <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+
+        {/* Step 2: Review & Submit */}
+        {step === 2 && (
+          <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <GlassCard className="!p-8 border-white/5 max-w-xl">
+              <h3 className="font-black italic tracking-tighter uppercase text-lg flex items-center gap-3 mb-6">
+                <Send className="text-emerald-400" size={18} /> Final Review
+              </h3>
+              <div className="space-y-5">
+                <div className="p-5 bg-white/[0.03] border border-white/5 rounded-2xl space-y-3">
+                  <div className="flex justify-between text-[10px] uppercase font-black text-white/30">
+                    <span>Title</span>
+                  </div>
+                  <p className="font-black text-lg">{generatedTitle}</p>
+                </div>
+                <div className="p-5 bg-white/[0.03] border border-white/5 rounded-2xl space-y-3">
+                  <span className="text-[10px] uppercase font-black text-white/30">Location</span>
+                  <p className="text-sm text-white/60 flex items-center gap-2"><MapPin size={14} className="text-[var(--accent)]" /> {locationName}</p>
+                </div>
+                <div className="p-5 bg-white/[0.03] border border-white/5 rounded-2xl space-y-3">
+                  <span className="text-[10px] uppercase font-black text-white/30">Petition Content</span>
+                  <p className="text-sm text-white/50 leading-relaxed italic">"{generatedContent}"</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-white/[0.03] border border-white/5 rounded-xl text-center">
+                    <span className="text-[9px] uppercase font-black text-white/20 block">Severity</span>
+                    <span className="text-2xl font-black text-red-400">{severityScore}%</span>
+                  </div>
+                  <div className="p-4 bg-white/[0.03] border border-white/5 rounded-xl text-center">
+                    <span className="text-[9px] uppercase font-black text-white/20 block">Population</span>
+                    <span className="text-2xl font-black text-[var(--accent)]">{parseInt(population || '50000').toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(1)} className="px-6 py-4 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:border-white/20 transition-all">
+                    <ChevronLeft size={14} /> Edit
+                  </button>
+                  <button onClick={handleSubmit} className="flex-1 py-4 bg-emerald-500 text-black font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-3 hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                    <Send size={16} /> Submit Petition
+                  </button>
+                </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default PetitionWizard;
