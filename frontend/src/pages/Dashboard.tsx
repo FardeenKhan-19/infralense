@@ -58,7 +58,7 @@ const Dashboard: React.FC = () => {
     if (!primaryAnalysis.data) return;
     setIsGenerating(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/analysis/generate-petition', {
+      const res = await axios.post(import.meta.env.VITE_API_URL + '/api/analysis/generate-petition', {
         data: {
           locationName: primaryAnalysis.data.location.name,
           population: primaryAnalysis.data.population,
@@ -523,7 +523,7 @@ const Dashboard: React.FC = () => {
                                 onClick={async () => {
                                   const token = localStorage.getItem('token');
                                   try {
-                                    await axios.post('http://localhost:5000/api/petitions', {
+                                    await axios.post(import.meta.env.VITE_API_URL + '/api/petitions', {
                                       title: `Reform: ${primaryAnalysis.data.location.name}`,
                                       content: petitionText,
                                       locationName: primaryAnalysis.data.location.name,

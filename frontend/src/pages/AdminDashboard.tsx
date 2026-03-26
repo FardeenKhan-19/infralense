@@ -50,7 +50,7 @@ const AdminDashboard: React.FC = () => {
   const fetchPetitions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/petitions', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/petitions', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPetitions(res.data);

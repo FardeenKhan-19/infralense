@@ -15,11 +15,11 @@ const AdminAnalytics: React.FC = () => {
     const fetch = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/petitions', {
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/petitions', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPetitions(res.data);
-      } catch {}
+      } catch { }
     };
     fetch();
   }, []);
@@ -28,7 +28,7 @@ const AdminAnalytics: React.FC = () => {
     { name: 'Approved', value: petitions.filter(p => p.status === 'APPROVED').length },
     { name: 'Pending', value: petitions.filter(p => p.status === 'PENDING').length },
     { name: 'Rejected', value: petitions.filter(p => p.status === 'REJECTED').length },
-    { name: 'Other', value: petitions.filter(p => !['APPROVED','PENDING','REJECTED'].includes(p.status)).length },
+    { name: 'Other', value: petitions.filter(p => !['APPROVED', 'PENDING', 'REJECTED'].includes(p.status)).length },
   ];
 
   const severityBuckets = [
@@ -44,7 +44,7 @@ const AdminAnalytics: React.FC = () => {
     const loc = p.locationName?.split(',')[0] || 'Unknown';
     locationMap[loc] = (locationMap[loc] || 0) + 1;
   });
-  const regionData = Object.entries(locationMap).map(([name, count]) => ({ name: name.slice(0,15), petitions: count }));
+  const regionData = Object.entries(locationMap).map(([name, count]) => ({ name: name.slice(0, 15), petitions: count }));
 
   const monthlyData = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();

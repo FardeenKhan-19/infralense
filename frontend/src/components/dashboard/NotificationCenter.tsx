@@ -16,7 +16,7 @@ const NotificationCenter: React.FC = () => {
     const fetchAnnouncements = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/announcements', {
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/announcements', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setAnnouncements(res.data);
@@ -28,7 +28,7 @@ const NotificationCenter: React.FC = () => {
     const fetchPetitions = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/petitions/my', {
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/petitions/my', {
           headers: { Authorization: `Bearer ${token}` }
         });
         const statusNotifs = res.data

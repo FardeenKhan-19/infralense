@@ -12,11 +12,11 @@ const AuditTrail: React.FC = () => {
     const fetch = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/petitions', {
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/petitions', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPetitions(res.data);
-      } catch {}
+      } catch { }
     };
     fetch();
   }, []);
@@ -26,7 +26,7 @@ const AuditTrail: React.FC = () => {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const getIcon = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'APPROVED': return <CheckCircle2 size={16} className="text-emerald-400" />;
       case 'REJECTED': return <XCircle size={16} className="text-red-400" />;
       default: return <Clock size={16} className="text-amber-400" />;
@@ -47,9 +47,8 @@ const AuditTrail: React.FC = () => {
           <Filter size={12} className="text-white/30" />
           {['ALL', 'APPROVED', 'REJECTED', 'PENDING'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${
-                filter === f ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]' : 'border-white/5 text-white/30'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${filter === f ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]' : 'border-white/5 text-white/30'
+                }`}
             >{f}</button>
           ))}
         </div>
@@ -59,7 +58,7 @@ const AuditTrail: React.FC = () => {
         <div className="relative">
           {/* Timeline line */}
           <div className="absolute left-[19px] top-0 bottom-0 w-px bg-white/5" />
-          
+
           <div className="space-y-0">
             {actionLog.length === 0 ? (
               <div className="py-20 text-center text-[10px] uppercase tracking-[0.4em] font-black text-white/10">No records found</div>
@@ -70,11 +69,10 @@ const AuditTrail: React.FC = () => {
                 </div>
                 <div className="flex-1 p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-white/10 transition-all">
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${
-                      item.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400' :
-                      item.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
-                      'bg-amber-500/10 text-amber-400'
-                    }`}>{item.status}</span>
+                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${item.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400' :
+                        item.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
+                          'bg-amber-500/10 text-amber-400'
+                      }`}>{item.status}</span>
                     <span className="text-[9px] text-white/20 font-mono">{new Date(item.updatedAt).toLocaleString()}</span>
                   </div>
                   <h4 className="font-black text-sm italic mb-1">{item.locationName}</h4>

@@ -14,16 +14,16 @@ const CitizenManagement: React.FC = () => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/petitions/users', {
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/petitions/users', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUsers(res.data);
-      } catch {}
+      } catch { }
     };
     fetchUsers();
   }, []);
 
-  const filtered = users.filter(u => 
+  const filtered = users.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase())
   );
@@ -40,7 +40,7 @@ const CitizenManagement: React.FC = () => {
         </div>
         <div className="relative">
           <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-          <input 
+          <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search citizens..."
             className="pl-10 pr-6 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-medium focus:border-[var(--accent)] outline-none transition-all w-72"
@@ -63,14 +63,14 @@ const CitizenManagement: React.FC = () => {
           <tbody>
             {filtered.map(user => {
               const approved = user.petitions?.filter((p: any) => p.status === 'APPROVED').length || 0;
-              const avgSev = user.petitions?.length > 0 
-                ? Math.round(user.petitions.reduce((s: number, p: any) => s + p.severityScore, 0) / user.petitions.length) 
+              const avgSev = user.petitions?.length > 0
+                ? Math.round(user.petitions.reduce((s: number, p: any) => s + p.severityScore, 0) / user.petitions.length)
                 : 0;
               const isExpanded = expandedUser === user.id;
 
               return (
                 <React.Fragment key={user.id}>
-                  <motion.tr 
+                  <motion.tr
                     onClick={() => setExpandedUser(isExpanded ? null : user.id)}
                     className="border-b border-white/5 hover:bg-white/[0.04] cursor-pointer transition-colors group"
                   >
@@ -88,9 +88,8 @@ const CitizenManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="p-6 text-center">
-                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${
-                        user.role === 'ADMIN' ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'bg-white/5 text-white/40'
-                      }`}>{user.role}</span>
+                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${user.role === 'ADMIN' ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'bg-white/5 text-white/40'
+                        }`}>{user.role}</span>
                     </td>
                     <td className="p-6 text-center">
                       <span className="text-lg font-black">{user.petitions?.length || 0}</span>
@@ -113,11 +112,10 @@ const CitizenManagement: React.FC = () => {
                               <div className="flex-1 min-w-0">
                                 <span className="text-[10px] font-mono text-white/30 block">ID: {p.id.slice(-8)}</span>
                               </div>
-                              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
-                                p.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-400' :
-                                p.status === 'REJECTED' ? 'bg-red-500/20 text-red-400' :
-                                'bg-amber-500/20 text-amber-400'
-                              }`}>{p.status}</span>
+                              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${p.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-400' :
+                                  p.status === 'REJECTED' ? 'bg-red-500/20 text-red-400' :
+                                    'bg-amber-500/20 text-amber-400'
+                                }`}>{p.status}</span>
                             </div>
                           ))}
                         </div>

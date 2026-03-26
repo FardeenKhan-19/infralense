@@ -23,7 +23,7 @@ const PetitionWizard: React.FC = () => {
     if (!locationName) return toast.error('Enter a location name');
     setIsGenerating(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/analysis/generate-petition', {
+      const res = await axios.post(import.meta.env.VITE_API_URL + '/api/analysis/generate-petition', {
         data: {
           locationName,
           population: parseInt(population) || 50000,
@@ -50,7 +50,7 @@ const PetitionWizard: React.FC = () => {
   const handleSubmit = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/petitions', {
+      await axios.post(import.meta.env.VITE_API_URL + '/api/petitions', {
         title: generatedTitle,
         content: generatedContent,
         locationName,
@@ -98,11 +98,10 @@ const PetitionWizard: React.FC = () => {
         {steps.map((s, i) => (
           <React.Fragment key={i}>
             <div className={`flex items-center gap-2 ${i <= step ? 'text-[var(--accent)]' : 'text-white/20'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
-                i < step ? 'bg-[var(--accent)] text-black border-[var(--accent)]' :
-                i === step ? 'border-[var(--accent)] text-[var(--accent)]' :
-                'border-white/10 text-white/20'
-              }`}>{i < step ? '✓' : i + 1}</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${i < step ? 'bg-[var(--accent)] text-black border-[var(--accent)]' :
+                  i === step ? 'border-[var(--accent)] text-[var(--accent)]' :
+                    'border-white/10 text-white/20'
+                }`}>{i < step ? '✓' : i + 1}</div>
               <span className="text-[10px] font-black uppercase tracking-widest">{s}</span>
             </div>
             {i < steps.length - 1 && <div className={`flex-1 h-px ${i < step ? 'bg-[var(--accent)]' : 'bg-white/5'}`} />}

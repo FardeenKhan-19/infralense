@@ -12,11 +12,11 @@ const CommunityFeed: React.FC = () => {
     const fetch = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/petitions/community', {
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/petitions/community', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPetitions(res.data);
-      } catch {}
+      } catch { }
     };
     fetch();
   }, []);
@@ -52,15 +52,14 @@ const CommunityFeed: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${
-                  p.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400' :
-                  p.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
-                  'bg-amber-500/10 text-amber-400'
-                }`}>{p.status}</span>
+                <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${p.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400' :
+                    p.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
+                      'bg-amber-500/10 text-amber-400'
+                  }`}>{p.status}</span>
               </div>
 
               <h3 className="font-black text-lg mb-2 group-hover:text-[var(--accent)] transition-colors">{p.title}</h3>
-              
+
               <div className="flex items-center gap-2 text-white/30 text-xs mb-3">
                 <MapPin size={12} /> {p.locationName}
               </div>

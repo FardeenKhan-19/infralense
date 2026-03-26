@@ -69,14 +69,14 @@ export const useMapStore = create<MapState>((set, get) => ({
     activeFilters: { ...state.activeFilters, [type]: !state.activeFilters[type] }
   })),
   toggleCompareMode: () => set((state) => ({ compareMode: !state.compareMode })),
-  
+
   analyzeArea: async (lat, lng, slot = 'primary') => {
     const slotKey = slot === 'primary' ? 'primaryAnalysis' : 'secondaryAnalysis';
-    
+
     try {
       set((state) => ({ [slotKey]: { ...state[slotKey], loading: true } }));
-      
-      const timeoutPromise = new Promise((_, reject) => 
+
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('TIMEOUT')), 12000)
       );
 
@@ -90,7 +90,7 @@ export const useMapStore = create<MapState>((set, get) => ({
 
         const mockPopulation = Math.floor(Math.random() * (50000 - 5000) + 5000);
 
-        const res = await axios.post('http://localhost:5000/api/analysis/gap-analysis', {
+        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/analysis/gap-analysis', {
           population: mockPopulation,
           schools: infra.schools,
           hospitals: infra.hospitals,
@@ -112,8 +112,8 @@ export const useMapStore = create<MapState>((set, get) => ({
         console.warn('Fallback triggered for:', slot);
         const fallbackLocation = { name: "Regional Analysis", city: "Local Area", lat, lng };
         const fallbackInfra = { schools: 2, hospitals: 1, banks: 3, elements: [] };
-        
-        const res = await axios.post('http://localhost:5000/api/analysis/gap-analysis', {
+
+        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/analysis/gap-analysis', {
           population: 15600,
           schools: fallbackInfra.schools,
           hospitals: fallbackInfra.hospitals,
@@ -126,11 +126,11 @@ export const useMapStore = create<MapState>((set, get) => ({
               ...res.data,
               location: fallbackLocation,
               population: 15600,
-               infraElements: [
+              infraElements: [
                 { lat: lat + 0.001, lon: lng + 0.001, tags: { amenity: 'school', name: 'Regional High' } },
                 { lat: lat - 0.002, lon: lng + 0.002, tags: { amenity: 'hospital', name: 'Sector Medical' } },
                 { lat: lat + 0.003, lon: lng - 0.001, tags: { amenity: 'bank', name: 'Central Finance' } }
-               ]
+              ]
             },
             loading: false
           }

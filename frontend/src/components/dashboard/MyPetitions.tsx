@@ -15,7 +15,7 @@ const MyPetitions: React.FC = () => {
   const fetchPetitions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/petitions/my', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/petitions/my', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPetitions(res.data);

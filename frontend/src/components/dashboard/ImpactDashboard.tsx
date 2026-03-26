@@ -18,11 +18,11 @@ const ImpactDashboard: React.FC = () => {
     const fetch = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/petitions/stats', {
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/petitions/stats', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStats(res.data);
-      } catch {}
+      } catch { }
     };
     fetch();
   }, []);

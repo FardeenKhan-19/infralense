@@ -14,11 +14,11 @@ const AdminAnnouncements: React.FC = () => {
   const fetchAnnouncements = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/announcements', {
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/announcements', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAnnouncements(res.data);
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => { fetchAnnouncements(); }, []);
@@ -28,7 +28,7 @@ const AdminAnnouncements: React.FC = () => {
     if (!title || !content) return toast.error('Fill all fields');
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/announcements', 
+      await axios.post(import.meta.env.VITE_API_URL + '/api/announcements',
         { title, content, priority },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -41,14 +41,14 @@ const AdminAnnouncements: React.FC = () => {
   };
 
   const getPriorityStyle = (p: string) => {
-    switch(p) {
+    switch (p) {
       case 'CRITICAL': return 'border-red-500/30 bg-red-500/5 text-red-400';
       case 'WARNING': return 'border-amber-500/30 bg-amber-500/5 text-amber-400';
       default: return 'border-[var(--accent)]/30 bg-[var(--accent)]/5 text-[var(--accent)]';
     }
   };
   const getPriorityIcon = (p: string) => {
-    switch(p) {
+    switch (p) {
       case 'CRITICAL': return <AlertTriangle size={14} />;
       case 'WARNING': return <Zap size={14} />;
       default: return <Info size={14} />;
@@ -76,7 +76,7 @@ const AdminAnnouncements: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 mb-2 block">Subject</label>
-              <input value={title} onChange={e => setTitle(e.target.value)} 
+              <input value={title} onChange={e => setTitle(e.target.value)}
                 className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-sm font-medium focus:border-[var(--accent)] outline-none transition-all"
                 placeholder="Infrastructure Update: New Policy..."
               />
@@ -93,9 +93,8 @@ const AdminAnnouncements: React.FC = () => {
               <div className="flex gap-3">
                 {['INFO', 'WARNING', 'CRITICAL'].map(p => (
                   <button key={p} type="button" onClick={() => setPriority(p)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${
-                      priority === p ? getPriorityStyle(p) : 'border-white/5 bg-white/[0.02] text-white/30'
-                    }`}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${priority === p ? getPriorityStyle(p) : 'border-white/5 bg-white/[0.02] text-white/30'
+                      }`}
                   >{p}</button>
                 ))}
               </div>
