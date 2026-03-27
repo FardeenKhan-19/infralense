@@ -12,7 +12,7 @@ router.post('/gap-analysis', async (req, res) => {
 
     // Call Consolidated Python AI Service with 8s timeout
     console.log(`Sending unified request for ${population} people to AI Service...`);
-    
+
     let result;
     try {
       const aiResponse = await axios.post('http://127.0.0.1:8000/api/analyze-full', {
@@ -25,7 +25,7 @@ router.post('/gap-analysis', async (req, res) => {
       const req_schools = (population * 0.20) / 500;
       const req_hospitals = population / 10000;
       const req_banks = population / 2000;
-      
+
       const calcGap = (ext: number, req: number) => ({
         existing: ext,
         required: Math.round(req),
@@ -33,22 +33,27 @@ router.post('/gap-analysis', async (req, res) => {
         severity: Math.min(1, Math.max(0, (req - ext) / req))
       });
 
+      const schoolsGap = calcGap(schools, req_schools);
+      const hospitalsGap = calcGap(hospitals, req_hospitals);
+      const banksGap = calcGap(banks, req_banks);
+      const avgSeverity = (schoolsGap.severity + hospitalsGap.severity + banksGap.severity) / 3;
+
       result = {
         gaps: {
-          schools: calcGap(schools, req_schools),
-          hospitals: calcGap(hospitals, req_hospitals),
-          banks: calcGap(banks, req_banks)
+          schools: schoolsGap,
+          hospitals: hospitalsGap,
+          banks: banksGap
         },
-        severity: 0.5,
-        priority: 7.5,
-        label: "moderate",
+        severity: avgSeverity,
+        priority: avgSeverity * Math.log1p(population),
+        label: avgSeverity > 0.6 ? "critical" : avgSeverity > 0.3 ? "moderate" : "low",
         prediction: {
           projection_years: 5,
           future_population: Math.round(population * 1.15),
           gaps: {
-             schools: { existing: schools, future_required: Math.round(req_schools * 1.15), future_gap: Math.round(req_schools * 1.15) - schools },
-             hospitals: { existing: hospitals, future_required: Math.round(req_hospitals * 1.15), future_gap: Math.round(req_hospitals * 1.15) - hospitals },
-             banks: { existing: banks, future_required: Math.round(req_banks * 1.15), future_gap: Math.round(req_banks * 1.15) - banks }
+            schools: { existing: schools, future_required: Math.round(req_schools * 1.15), future_gap: Math.round(req_schools * 1.15) - schools },
+            hospitals: { existing: hospitals, future_required: Math.round(req_hospitals * 1.15), future_gap: Math.round(req_hospitals * 1.15) - hospitals },
+            banks: { existing: banks, future_required: Math.round(req_banks * 1.15), future_gap: Math.round(req_banks * 1.15) - banks }
           }
         }
       };

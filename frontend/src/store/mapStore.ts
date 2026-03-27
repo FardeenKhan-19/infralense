@@ -110,11 +110,12 @@ export const useMapStore = create<MapState>((set, get) => ({
         });
       } catch (innerError: any) {
         console.warn('Fallback triggered for:', slot);
-        const fallbackLocation = { name: "Regional Analysis", city: "Local Area", lat, lng };
-        const fallbackInfra = { schools: 2, hospitals: 1, banks: 3, elements: [] };
+        const fallbackPop = Math.floor(Math.random() * (40000 - 10000) + 10000);
+        const fallbackLocation = { name: "Regional Analysis Sector", city: "Local Area", lat, lng };
+        const fallbackInfra = { schools: Math.floor(Math.random() * 3), hospitals: Math.floor(Math.random() * 2), banks: Math.floor(Math.random() * 4), elements: [] };
 
         const res = await axios.post(import.meta.env.VITE_API_URL + '/api/analysis/gap-analysis', {
-          population: 15600,
+          population: fallbackPop,
           schools: fallbackInfra.schools,
           hospitals: fallbackInfra.hospitals,
           banks: fallbackInfra.banks, lat, lng
@@ -125,11 +126,11 @@ export const useMapStore = create<MapState>((set, get) => ({
             data: {
               ...res.data,
               location: fallbackLocation,
-              population: 15600,
+              population: fallbackPop,
               infraElements: [
-                { lat: lat + 0.001, lon: lng + 0.001, tags: { amenity: 'school', name: 'Regional High' } },
-                { lat: lat - 0.002, lon: lng + 0.002, tags: { amenity: 'hospital', name: 'Sector Medical' } },
-                { lat: lat + 0.003, lon: lng - 0.001, tags: { amenity: 'bank', name: 'Central Finance' } }
+                { lat: lat + 0.001, lon: lng + 0.001, tags: { amenity: 'school', name: `${fallbackLocation.name} High` } },
+                { lat: lat - 0.002, lon: lng + 0.002, tags: { amenity: 'hospital', name: `${fallbackLocation.name} Medical` } },
+                { lat: lat + 0.003, lon: lng - 0.001, tags: { amenity: 'bank', name: `${fallbackLocation.name} Finance` } }
               ]
             },
             loading: false
