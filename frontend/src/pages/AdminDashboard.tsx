@@ -62,7 +62,7 @@ const AdminDashboard: React.FC = () => {
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:5000/api/petitions/${id}/status`,
+      await axios.patch(`${import.meta.env.VITE_API_URL}/api/petitions/${id}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
