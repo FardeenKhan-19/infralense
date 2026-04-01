@@ -46,7 +46,16 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 router.post(
     '/',
     authenticate,
-    upload.single('image'),
+    (req: any, res: any, next: any) => {
+        upload.single('image')(req, res, function (err) {
+            if (err) {
+                console.error("🔥 CRASH DETAILS (MULTER):", err instanceof Error ? err.message : err);
+                console.error(err);
+                return res.status(500).json({ error: "Image Upload Error", details: err.message });
+            }
+            next();
+        });
+    },
     async (req: AuthRequest, res: any) => {
         try {
             if (!req.file) {
@@ -117,7 +126,8 @@ router.post(
 
             res.status(201).json(complaint);
         } catch (error: any) {
-            console.error('Complaint submission error:', error);
+            console.error("🔥 CRASH DETAILS:", error instanceof Error ? error.message : error);
+            console.error(error);
             res.status(500).json({ error: 'Failed to submit complaint', details: error.message });
         }
     }
