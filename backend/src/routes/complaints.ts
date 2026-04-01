@@ -155,7 +155,9 @@ router.patch('/:id/status', authenticate, async (req: AuthRequest, res: any) => 
 
         res.json(complaint);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update complaint status' });
+        console.error("🔥 CRASH DETAILS:", error instanceof Error ? error.message : error);
+        console.error(error); // This prints the full stack trace
+        res.status(500).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
     }
 });
 
