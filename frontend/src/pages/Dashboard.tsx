@@ -15,7 +15,8 @@ import {
   LogOut,
   User,
   Download,
-  ArrowLeft
+  ArrowLeft,
+  AlertTriangle
 } from 'lucide-react';
 import {
   PieChart,
@@ -45,6 +46,7 @@ import CommunityFeed from '../components/dashboard/CommunityFeed';
 import ImpactDashboard from '../components/dashboard/ImpactDashboard';
 import NotificationCenter from '../components/dashboard/NotificationCenter';
 import PetitionWizard from '../components/dashboard/PetitionWizard';
+import ReportIssueForm from '../components/dashboard/ReportIssueForm';
 
 const Dashboard: React.FC = () => {
   const { tileMode, setTileMode, primaryAnalysis, closeAnalysis, heatmap, activeFilters } = useMapStore();
@@ -81,6 +83,7 @@ const Dashboard: React.FC = () => {
     { icon: <FileText size={20} />, label: 'Petitions', view: 'Petitions' },
     { icon: <BarChart3 size={20} />, label: 'Analytics', view: 'Analytics' },
     { icon: <Globe size={20} />, label: 'Community', view: 'Community' },
+    { icon: <AlertTriangle size={20} />, label: 'Report Issue', view: 'ReportIssue' },
     { icon: <Trophy size={20} />, label: 'My Impact', view: 'Impact' },
     { icon: <Bell size={20} />, label: 'Notifications', view: 'Notifications' },
     { icon: <Wand2 size={20} />, label: 'New Petition', view: 'Wizard' },
@@ -185,6 +188,8 @@ const Dashboard: React.FC = () => {
         {/* View Content */}
         {activeView === 'Petitions' ? (
           <MyPetitions />
+        ) : activeView === 'ReportIssue' ? (
+          <ReportIssueForm />
         ) : activeView === 'Community' ? (
           <CommunityFeed />
         ) : activeView === 'Impact' ? (

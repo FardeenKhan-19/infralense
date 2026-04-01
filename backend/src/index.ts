@@ -10,6 +10,8 @@ import analysisRoutes from './routes/analysis';
 import recommendationRoutes from './routes/recommendations';
 import petitionRoutes from './routes/petitions';
 import announcementRoutes from './routes/announcements';
+import complaintRoutes from './routes/complaints';
+import path from 'path';
 
 dotenv.config();
 
@@ -29,6 +31,8 @@ app.use('/api/analysis', analysisRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/petitions', petitionRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -36,7 +40,7 @@ app.get('/health', (req, res) => {
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });

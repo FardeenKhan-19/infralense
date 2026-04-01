@@ -19,6 +19,7 @@ model User {
   name          String
   role          String     @default("CITIZEN") // CITIZEN or ADMIN
   petitions     Petition[]
+  complaints    Complaint[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
@@ -55,4 +56,19 @@ model Announcement {
   content   String
   priority  String   @default("INFO") // INFO, WARNING, CRITICAL
   createdAt DateTime @default(now())
+}
+
+model Complaint {
+  id          String   @id @default(cuid())
+  category    String
+  description String?
+  imageUrl    String
+  latitude    Float
+  longitude   Float
+  severity    Int
+  status      String   @default("PENDING")
+  creator     User     @relation(fields: [creatorId], references: [id])
+  creatorId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
