@@ -32,7 +32,10 @@ const AdminDashboard: React.FC = () => {
   const [recommendation, setRecommendation] = useState("Analyzing recent geospatial trends...");
   const [liveFeed, setLiveFeed] = useState<any[]>([]);
   const [petitions, setPetitions] = useState<any[]>([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [activeQueue, setActiveQueue] = useState<'petitions' | 'complaints'>('petitions');
   const [selectedPetition, setSelectedPetition] = useState<any | null>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
   const [adminLog, setAdminLog] = useState<{ action: string, time: string }[]>([]);
   const [systemUptime] = useState(() => {
     const start = Date.now() - Math.floor(Math.random() * 86400000);
@@ -59,17 +62,35 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = async (id: string, status: string) => {
+  const fetchComplaints = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`${import.meta.env.VITE_API_URL}/api/petitions/${id}/status`,
+      const res = await axios.get(import.meta.env.VITE_API_URL + '/api/complaints', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setComplaints(res.data);
+    } catch (err) {
+      toast.error('Failed to fetch infrastructure complaints');
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: string, type: 'PETITION' | 'COMPLAINT' = 'PETITION') => {
+    try {
+      const token = localStorage.getItem('token');
+      const endpoint = type === 'PETITION' ? `/api/petitions/${id}/status` : `/api/complaints/${id}/status`;
+      await axios.patch(`${import.meta.env.VITE_API_URL}${endpoint}`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(`Petition ${status}`);
-      setAdminLog(prev => [{ action: `${status} petition ${id.slice(-6)}`, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));
-      fetchPetitions();
-      socket.emit('admin_action', { type: 'PETITION_STATUS_UPDATE', id, status });
+      toast.success(`${type} ${status}`);
+      setAdminLog(prev => [{ action: `${status} ${type.toLowerCase()} ${id.slice(-6)}`, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));
+
+      if (type === 'PETITION') {
+        fetchPetitions();
+      } else {
+        fetchComplaints();
+      }
+      socket.emit('admin_action', { type: `${type}_STATUS_UPDATE`, id, status });
     } catch (err) {
       toast.error('Failed to update status');
     }
@@ -77,6 +98,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchPetitions();
+    fetchComplaints();
     socket.on('intelligence_update', (data) => {
       setLiveFeed(prev => [data, ...prev].slice(0, 8));
       if (data.type === 'recommendation') {
@@ -98,13 +120,15 @@ const AdminDashboard: React.FC = () => {
     };
   }, []);
 
-  const pendingCount = petitions.filter(p => p.status === 'PENDING').length;
-  const approvedCount = petitions.filter(p => p.status === 'APPROVED').length;
-  const rejectedCount = petitions.filter(p => p.status === 'REJECTED').length;
-  const criticalCount = petitions.filter(p => p.severityScore > 80).length;
+  const currentData = activeQueue === 'petitions' ? petitions : complaints;
+
+  const pendingCount = currentData.filter(p => p.status === 'PENDING').length;
+  const approvedCount = currentData.filter(p => p.status === 'APPROVED').length;
+  const rejectedCount = currentData.filter(p => p.status === 'REJECTED').length;
+  const criticalCount = currentData.filter(p => (activeQueue === 'petitions' ? p.severityScore : (p.severity * 10)) > 80).length;
 
   const stats = [
-    { label: 'Total Petitions', value: petitions.length.toString(), icon: <FileText className="text-blue-400" />, trend: '+12%' },
+    { label: `Total ${activeQueue === 'petitions' ? 'Petitions' : 'Complaints'}`, value: currentData.length.toString(), icon: <FileText className="text-blue-400" />, trend: '+12%' },
     { label: 'Pending Action', value: pendingCount.toString(), icon: <Clock className="text-amber-400" />, trend: 'Live' },
     { label: 'Approved Reforms', value: approvedCount.toString(), icon: <ShieldCheck className="text-emerald-400" />, trend: '+8%' },
     { label: 'Critical Zones', value: criticalCount.toString(), icon: <AlertTriangle className="text-red-400" />, trend: 'Priority' },
@@ -207,13 +231,13 @@ const AdminDashboard: React.FC = () => {
             <BarChart3 className="text-[var(--accent)]" size={16} />
             Governance Distribution
           </h3>
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">{petitions.length} Total Cases</span>
+          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">{currentData.length} Total Cases</span>
         </div>
         <div className="w-full h-6 bg-white/5 rounded-full overflow-hidden flex">
-          {petitions.length > 0 ? (
+          {currentData.length > 0 ? (
             <>
               <motion.div
-                initial={{ width: 0 }} animate={{ width: `${(approvedCount / petitions.length) * 100}%` }}
+                initial={{ width: 0 }} animate={{ width: `${(approvedCount / currentData.length) * 100}%` }}
                 transition={{ duration: 1, ease: 'easeOut' }}
                 className="h-full bg-emerald-500/80 relative group cursor-pointer"
               >
@@ -222,7 +246,7 @@ const AdminDashboard: React.FC = () => {
                 </span>
               </motion.div>
               <motion.div
-                initial={{ width: 0 }} animate={{ width: `${(pendingCount / petitions.length) * 100}%` }}
+                initial={{ width: 0 }} animate={{ width: `${(pendingCount / currentData.length) * 100}%` }}
                 transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
                 className="h-full bg-amber-500/80 relative group cursor-pointer"
               >
@@ -231,7 +255,7 @@ const AdminDashboard: React.FC = () => {
                 </span>
               </motion.div>
               <motion.div
-                initial={{ width: 0 }} animate={{ width: `${(rejectedCount / petitions.length) * 100}%` }}
+                initial={{ width: 0 }} animate={{ width: `${(rejectedCount / currentData.length) * 100}%` }}
                 transition={{ duration: 1, delay: 0.4, ease: 'easeOut' }}
                 className="h-full bg-red-500/80 relative group cursor-pointer"
               >
@@ -332,8 +356,22 @@ const AdminDashboard: React.FC = () => {
         <GlassCard className="lg:col-span-2 !p-0 overflow-hidden flex flex-col border-white/5 min-h-[600px]">
           <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
             <div>
-              <h2 className="text-2xl font-black italic tracking-tighter uppercase">National Reform Queue</h2>
+              <h2 className="text-2xl font-black italic tracking-tighter uppercase">{activeQueue === 'petitions' ? 'National Reform Queue' : 'Infrastructure Surveillance Queue'}</h2>
               <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-white/20">Awaiting Executive Determination</p>
+            </div>
+            <div className="flex bg-white/5 rounded-xl p-1 border border-white/10">
+              <button
+                onClick={() => setActiveQueue('petitions')}
+                className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeQueue === 'petitions' ? 'bg-[var(--accent)] text-black' : 'text-white/40 hover:text-white'}`}
+              >
+                Petitions
+              </button>
+              <button
+                onClick={() => setActiveQueue('complaints')}
+                className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeQueue === 'complaints' ? 'bg-[var(--accent)] text-black' : 'text-white/40 hover:text-white'}`}
+              >
+                Complaints
+              </button>
             </div>
           </div>
 
@@ -349,65 +387,69 @@ const AdminDashboard: React.FC = () => {
               </thead>
               <tbody className="text-sm">
                 <AnimatePresence mode="popLayout">
-                  {petitions.length === 0 ? (
+                  {currentData.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-20 text-center font-black uppercase tracking-[0.5em] text-white/10 italic">No Active Cases Found</td>
                     </tr>
-                  ) : petitions.map((item) => (
-                    <motion.tr
-                      key={item.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      onClick={() => setSelectedPetition(item)}
-                      className="border-b border-white/5 hover:bg-white/[0.04] cursor-pointer transition-colors group"
-                    >
-                      <td className="p-6 group-hover:pl-8 transition-all">
-                        <div className="flex flex-col">
-                          <span className="font-black italic text-white uppercase tracking-tight">{item.locationName}</span>
-                          <span className="text-[9px] text-white/20 font-bold tracking-widest uppercase mt-1">ID: {item.id.slice(-8)}</span>
-                        </div>
-                      </td>
-                      <td className="p-6">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div className={`h-full ${item.severityScore > 80 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-[var(--accent)] shadow-[0_0_10px_rgba(0,245,255,0.5)]'}`} style={{ width: `${item.severityScore}%` }}></div>
+                  ) : currentData.map((item) => {
+                    const isPetition = activeQueue === 'petitions';
+                    const severityVal = isPetition ? item.severityScore : (item.severity * 10);
+                    return (
+                      <motion.tr
+                        key={item.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        onClick={() => isPetition ? setSelectedPetition(item) : setSelectedComplaint(item)}
+                        className="border-b border-white/5 hover:bg-white/[0.04] cursor-pointer transition-colors group"
+                      >
+                        <td className="p-6 group-hover:pl-8 transition-all">
+                          <div className="flex flex-col">
+                            <span className="font-black italic text-white uppercase tracking-tight">{isPetition ? item.locationName : item.category}</span>
+                            <span className="text-[9px] text-white/20 font-bold tracking-widest uppercase mt-1">ID: {item.id.slice(-8)}</span>
                           </div>
-                          <span className={`text-[10px] font-black ${item.severityScore > 80 ? 'text-red-400' : 'text-[var(--accent)]'}`}>{item.severityScore}%</span>
-                        </div>
-                      </td>
-                      <td className="p-6">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-black text-white/60">{item.creator?.name || 'CITIZEN-ANON'}</span>
-                          <span className="text-[9px] text-white/20 font-bold uppercase">{item.creator?.email}</span>
-                        </div>
-                      </td>
-                      <td className="p-6">
-                        <div className="flex items-center justify-center gap-3">
-                          {item.status === 'PENDING' ? (
-                            <>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleUpdateStatus(item.id, 'APPROVED'); }}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-500 hover:text-black transition-all"
-                              >
-                                <CheckCircle2 size={12} /> Approve
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleUpdateStatus(item.id, 'REJECTED'); }}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-black transition-all"
-                              >
-                                <XCircle size={12} /> Reject
-                              </button>
-                            </>
-                          ) : (
-                            <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${item.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
-                              }`}>
-                              {item.status}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
+                        </td>
+                        <td className="p-6">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                              <div className={`h-full ${severityVal > 80 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-[var(--accent)] shadow-[0_0_10px_rgba(0,245,255,0.5)]'}`} style={{ width: `${severityVal}%` }}></div>
+                            </div>
+                            <span className={`text-[10px] font-black ${severityVal > 80 ? 'text-red-400' : 'text-[var(--accent)]'}`}>{severityVal}%</span>
+                          </div>
+                        </td>
+                        <td className="p-6">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-white/60">{item.creator?.name || 'CITIZEN-ANON'}</span>
+                            <span className="text-[9px] text-white/20 font-bold uppercase">{item.creator?.email}</span>
+                          </div>
+                        </td>
+                        <td className="p-6">
+                          <div className="flex items-center justify-center gap-3">
+                            {item.status === 'PENDING' ? (
+                              <>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleUpdateStatus(item.id, 'APPROVED', isPetition ? 'PETITION' : 'COMPLAINT'); }}
+                                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-500 hover:text-black transition-all"
+                                >
+                                  <CheckCircle2 size={12} /> Approve
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleUpdateStatus(item.id, 'REJECTED', isPetition ? 'PETITION' : 'COMPLAINT'); }}
+                                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-black transition-all"
+                                >
+                                  <XCircle size={12} /> Reject
+                                </button>
+                              </>
+                            ) : (
+                              <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${item.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                                }`}>
+                                {item.status}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </motion.tr>
+                    )
+                  })}
                 </AnimatePresence>
               </tbody>
             </table>
@@ -645,6 +687,119 @@ const AdminDashboard: React.FC = () => {
                       Reject
                     </button>
                   </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Complaint Review Modal */}
+      <AnimatePresence>
+        {selectedComplaint && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedComplaint(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-4xl bg-[#0a1120] border border-white/10 rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-10 border-b border-white/5 flex justify-between items-start bg-white/[0.02]">
+                <div className="flex gap-6 items-center">
+                  <div className="w-16 h-16 rounded-2xl bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] shadow-[0_0_30px_rgba(0,245,255,0.1)]">
+                    <AlertTriangle size={32} />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-black italic tracking-tighter uppercase mb-1">Infrastructure Surveillance</h2>
+                    <p className="text-[10px] uppercase font-bold tracking-[0.4em] text-white/40 italic leading-none">Case ID: {selectedComplaint.id}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedComplaint(null)}
+                  className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 hover:border-white/20 transition-all text-white/40"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-12">
+                {/* Evidence Panel */}
+                <section>
+                  <label className="text-[10px] uppercase font-black tracking-[0.4em] text-[var(--accent)] mb-6 block">I. Subject Evidence</label>
+                  <div className="flex flex-col md:flex-row gap-8">
+                    <div className="w-full md:w-1/2 rounded-3xl overflow-hidden border border-white/10 relative">
+                      <img src={selectedComplaint.imageUrl} alt="Complaint Evidence" className="w-full h-auto object-cover" />
+                      <div className="absolute top-4 left-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] uppercase font-black tracking-widest text-[#00f5ff] border border-[#00f5ff]/20">
+                        Visual Capture Data
+                      </div>
+                    </div>
+                    <div className="w-full md:w-1/2 space-y-6">
+                      <div className="bg-white/5 border border-white/5 rounded-3xl p-6">
+                        <span className="text-[9px] uppercase font-black tracking-[0.3em] text-white/20 mb-2 block">AI Neural Classification</span>
+                        <h3 className="text-2xl font-black italic text-white uppercase">{selectedComplaint.category}</h3>
+                      </div>
+
+                      <div className="bg-white/5 border border-white/5 rounded-3xl p-6">
+                        <span className="text-[9px] uppercase font-black tracking-[0.3em] text-white/20 mb-2 block">Neural Severity Assignment</span>
+                        <div className="flex items-baseline gap-2">
+                          <span className={`text-3xl font-black italic ${selectedComplaint.severity > 8 ? 'text-red-500' : 'text-[#00f5ff]'}`}>{selectedComplaint.severity * 10}%</span>
+                          <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Risk Factor</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-6 mt-4">
+                        <span className="text-[9px] uppercase font-black tracking-[0.3em] text-white/20 mb-2 block">Geospatial Origin</span>
+                        <p className="text-white/60 font-mono text-sm">LAT: {selectedComplaint.latitude}</p>
+                        <p className="text-white/60 font-mono text-sm">LNG: {selectedComplaint.longitude}</p>
+                        <p className="text-white/40 font-mono text-xs mt-2 italic text-[10px]">Reported by: {(selectedComplaint.creator && selectedComplaint.creator.name) ? selectedComplaint.creator.email : 'Citizen'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <label className="text-[10px] uppercase font-black tracking-[0.4em] text-[var(--accent)] mb-6 block">II. Citizen Report Context</label>
+                  <p className="text-lg leading-loose text-white/70 italic font-medium p-8 bg-white/[0.01] rounded-3xl border border-white/5">
+                    "{selectedComplaint.description || "No description provided."}"
+                  </p>
+                </section>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-10 border-t border-white/5 flex gap-4 bg-white/[0.02] justify-end">
+                {selectedComplaint.status === 'PENDING' && (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { handleUpdateStatus(selectedComplaint.id, 'APPROVED', 'COMPLAINT'); setSelectedComplaint(null); }}
+                      className="px-10 py-5 bg-emerald-500 rounded-2xl text-black font-black uppercase text-xs hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+                    >
+                      Authorize Action
+                    </button>
+                    <button
+                      onClick={() => { handleUpdateStatus(selectedComplaint.id, 'REJECTED', 'COMPLAINT'); setSelectedComplaint(null); }}
+                      className="px-10 py-5 bg-red-500 rounded-2xl text-white font-black uppercase text-xs hover:bg-red-400 transition-all"
+                    >
+                      Dismiss Case
+                    </button>
+                  </div>
+                )}
+                {selectedComplaint.status === 'APPROVED' && (
+                  <button
+                    onClick={() => { handleUpdateStatus(selectedComplaint.id, 'RESOLVED', 'COMPLAINT'); setSelectedComplaint(null); }}
+                    className="px-10 py-5 bg-[#00f5ff]/20 border border-[#00f5ff]/30 rounded-2xl text-[#00f5ff] font-black uppercase text-xs hover:bg-[#00f5ff]/30 transition-all"
+                  >
+                    Mark as Resolved
+                  </button>
                 )}
               </div>
             </motion.div>

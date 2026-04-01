@@ -139,4 +139,24 @@ router.get('/', authenticate, async (req: AuthRequest, res: any) => {
     }
 });
 
+router.patch('/:id/status', authenticate, async (req: AuthRequest, res: any) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!['APPROVED', 'REJECTED', 'RESOLVED'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+
+        const complaint = await prisma.complaint.update({
+            where: { id },
+            data: { status },
+        });
+
+        res.json(complaint);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update complaint status' });
+    }
+});
+
 export default router;
